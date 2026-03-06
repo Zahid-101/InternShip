@@ -8,10 +8,13 @@ import com.driveease.model.Vehicle;
 import com.driveease.model.VehicleType;
 import com.driveease.repository.DocumentRepository;
 import com.driveease.repository.VehicleRepository;
+import org.apache.tika.Tika;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -26,7 +29,10 @@ import java.util.stream.Collectors;
 public class VehicleService {
 
     private static final Set<String> ALLOWED_EXTENSIONS = Set.of("pdf", "jpg", "png");
+    private static final Set<String> ALLOWED_MIME_TYPES = Set.of(
+            "application/pdf", "image/jpeg", "image/png");
     private static final String UPLOAD_DIR = "uploads";
+    private static final Tika tika = new Tika();
 
     private final VehicleRepository vehicleRepository;
     private final DocumentRepository documentRepository;
@@ -76,7 +82,7 @@ public class VehicleService {
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
                 .orElseThrow(() -> new RuntimeException("Vehicle not found with id: " + vehicleId));
 
-        // Validate file extension
+        // Step 1: Validate file extension
         String originalFilename = file.getOriginalFilename();
         if (originalFilename == null || originalFilename.isBlank()) {
             throw new IllegalArgumentException("File name is missing");
@@ -86,6 +92,18 @@ public class VehicleService {
         if (!ALLOWED_EXTENSIONS.contains(extension)) {
             throw new IllegalArgumentException(
                     "Invalid file type. Only .pdf, .jpg, and .png are allowed");
+        }
+
+        // Step 2: Validate actual file content via Tika magic bytes
+        try (InputStream is = new BufferedInputStream(file.getInputStream())) {
+            String detectedMimeType = tika.detect(is);
+            if (!ALLOWED_MIME_TYPES.contains(detectedMimeType)) {
+                throw new IllegalArgumentException(
+                        "File content does not match an allowed type. "
+                        + "Detected: " + detectedMimeType);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read file for validation: " + e.getMessage(), e);
         }
 
         // Save file to uploads/ directory
