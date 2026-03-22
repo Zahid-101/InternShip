@@ -23,8 +23,11 @@ public class Document {
     @Column(name = "file_name", nullable = false)
     private String fileName;
 
-    @Column(name = "file_path", nullable = false)
-    private String filePath;
+    @Column(name = "s3_url", nullable = false)
+    private String s3Url;
+
+    @Column(name = "raw_ocr_text", columnDefinition = "TEXT")
+    private String rawOcrText;
 
     @Column(name = "upload_date", nullable = false)
     private LocalDateTime uploadDate;

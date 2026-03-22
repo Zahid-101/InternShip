@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 @Data
@@ -22,5 +23,6 @@ public class VehicleResponse {
     private BigDecimal baseDailyRate;
     private int quantityAvailable;
     private String imageUrl;
+    private LocalDate contractExpiryDate;
     private List<DocumentResponse> documents;
 }

@@ -8,39 +8,32 @@ import com.driveease.model.Vehicle;
 import com.driveease.model.VehicleType;
 import com.driveease.repository.DocumentRepository;
 import com.driveease.repository.VehicleRepository;
-import org.apache.tika.Tika;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
 public class VehicleService {
 
-    private static final Set<String> ALLOWED_EXTENSIONS = Set.of("pdf", "jpg", "png");
-    private static final Set<String> ALLOWED_MIME_TYPES = Set.of(
-            "application/pdf", "image/jpeg", "image/png");
-    private static final String UPLOAD_DIR = "uploads";
-    private static final Tika tika = new Tika();
-
     private final VehicleRepository vehicleRepository;
     private final DocumentRepository documentRepository;
+    private final S3Service s3Service;
+    private final FileValidatorService fileValidatorService;
+    private final OcrService ocrService;
 
     public VehicleService(VehicleRepository vehicleRepository,
-                          DocumentRepository documentRepository) {
+                          DocumentRepository documentRepository,
+                          S3Service s3Service,
+                          FileValidatorService fileValidatorService,
+                          OcrService ocrService) {
         this.vehicleRepository = vehicleRepository;
         this.documentRepository = documentRepository;
+        this.s3Service = s3Service;
+        this.fileValidatorService = fileValidatorService;
+        this.ocrService = ocrService;
     }
 
     public VehicleResponse addVehicle(VehicleRequest request) {
@@ -60,6 +53,7 @@ public class VehicleService {
                 .baseDailyRate(request.getBaseDailyRate())
                 .quantityAvailable(request.getQuantityAvailable())
                 .imageUrl(request.getImageUrl())
+                .contractExpiryDate(request.getContractExpiryDate())
                 .build();
 
         Vehicle saved = vehicleRepository.save(vehicle);
@@ -82,56 +76,26 @@ public class VehicleService {
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
                 .orElseThrow(() -> new RuntimeException("Vehicle not found with id: " + vehicleId));
 
-        // Step 1: Validate file extension
-        String originalFilename = file.getOriginalFilename();
-        if (originalFilename == null || originalFilename.isBlank()) {
-            throw new IllegalArgumentException("File name is missing");
-        }
+        // Step 1: Validate file (extension, magic bytes, extension-content match)
+        fileValidatorService.validate(file);
 
-        String extension = getFileExtension(originalFilename).toLowerCase();
-        if (!ALLOWED_EXTENSIONS.contains(extension)) {
-            throw new IllegalArgumentException(
-                    "Invalid file type. Only .pdf, .jpg, and .png are allowed");
-        }
+        // Step 2: Upload to S3 and get public URL
+        String s3Url = s3Service.uploadFile(file);
 
-        // Step 2: Validate actual file content via Tika magic bytes
-        try (InputStream is = new BufferedInputStream(file.getInputStream())) {
-            String detectedMimeType = tika.detect(is);
-            if (!ALLOWED_MIME_TYPES.contains(detectedMimeType)) {
-                throw new IllegalArgumentException(
-                        "File content does not match an allowed type. "
-                        + "Detected: " + detectedMimeType);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to read file for validation: " + e.getMessage(), e);
-        }
+        // Step 3: Perform OCR (gracefully returns empty string on failure)
+        String ocrText = ocrService.extractText(file);
 
-        // Save file to uploads/ directory
-        try {
-            Path uploadPath = Paths.get(UPLOAD_DIR);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
+        // Step 4: Save metadata to DB
+        Document document = Document.builder()
+                .fileName(file.getOriginalFilename())
+                .s3Url(s3Url)
+                .rawOcrText(ocrText)
+                .uploadDate(LocalDateTime.now())
+                .vehicle(vehicle)
+                .build();
 
-            // Generate unique filename to avoid collisions
-            String storedFileName = UUID.randomUUID() + "." + extension;
-            Path filePath = uploadPath.resolve(storedFileName);
-            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-            // Save metadata to DB
-            Document document = Document.builder()
-                    .fileName(originalFilename)
-                    .filePath(filePath.toString())
-                    .uploadDate(LocalDateTime.now())
-                    .vehicle(vehicle)
-                    .build();
-
-            Document saved = documentRepository.save(document);
-            return toDocumentResponse(saved);
-
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to store file: " + e.getMessage(), e);
-        }
+        Document saved = documentRepository.save(document);
+        return toDocumentResponse(saved);
     }
 
     public List<DocumentResponse> getDocumentsByVehicleId(Long vehicleId) {
@@ -162,6 +126,7 @@ public class VehicleService {
                 .baseDailyRate(vehicle.getBaseDailyRate())
                 .quantityAvailable(vehicle.getQuantityAvailable())
                 .imageUrl(vehicle.getImageUrl())
+                .contractExpiryDate(vehicle.getContractExpiryDate())
                 .documents(docs)
                 .build();
     }
@@ -170,16 +135,9 @@ public class VehicleService {
         return DocumentResponse.builder()
                 .id(document.getId())
                 .fileName(document.getFileName())
-                .filePath(document.getFilePath())
+                .s3Url(document.getS3Url())
+                .rawOcrText(document.getRawOcrText())
                 .uploadDate(document.getUploadDate())
                 .build();
-    }
-
-    private String getFileExtension(String filename) {
-        int lastDot = filename.lastIndexOf('.');
-        if (lastDot == -1) {
-            return "";
-        }
-        return filename.substring(lastDot + 1);
     }
 }

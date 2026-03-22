@@ -1,3 +1,4 @@
+C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\config\S3Config.java
 C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\controller\AuthController.java
 C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\controller\VehicleController.java
 C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\DriveEaseApplication.java
@@ -8,11 +9,13 @@ C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\dto\RegisterRequ
 C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\dto\VehicleRequest.java
 C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\dto\VehicleResponse.java
 C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\model\Document.java
+C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\model\PasswordResetToken.java
 C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\model\Role.java
 C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\model\User.java
 C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\model\Vehicle.java
 C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\model\VehicleType.java
 C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\repository\DocumentRepository.java
+C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\repository\PasswordResetTokenRepository.java
 C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\repository\UserRepository.java
 C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\repository\VehicleRepository.java
 C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\security\AuthEntryPoint.java
@@ -20,4 +23,7 @@ C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\security\CustomU
 C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\security\JwtAuthenticationFilter.java
 C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\security\JwtUtils.java
 C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\security\SecurityConfig.java
+C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\service\FileValidatorService.java
+C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\service\OcrService.java
+C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\service\S3Service.java
 C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\service\VehicleService.java

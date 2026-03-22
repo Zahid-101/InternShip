@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Data
 @NoArgsConstructor
@@ -32,4 +33,6 @@ public class VehicleRequest {
     private int quantityAvailable;
 
     private String imageUrl;
+
+    private LocalDate contractExpiryDate;
 }

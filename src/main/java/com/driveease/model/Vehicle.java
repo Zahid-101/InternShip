@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,6 +44,9 @@ public class Vehicle {
 
     @Column(name = "image_url")
     private String imageUrl;
+
+    @Column(name = "contract_expiry_date")
+    private LocalDate contractExpiryDate;
 
     @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

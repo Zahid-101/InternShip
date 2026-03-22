@@ -1,0 +1,7 @@
+# ===== LocalStack S3 (Dev) =====
+driveease:
+  s3:
+    endpoint: http://localhost:4566
+    access-key: test
+    secret-key: test
+    path-style-access: true

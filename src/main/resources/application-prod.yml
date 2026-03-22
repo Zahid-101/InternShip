@@ -1,0 +1,6 @@
+# ===== AWS S3 (Prod) =====
+driveease:
+  s3:
+    access-key: ${AWS_ACCESS_KEY_ID}
+    secret-key: ${AWS_SECRET_ACCESS_KEY}
+    path-style-access: false

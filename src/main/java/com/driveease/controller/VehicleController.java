@@ -47,9 +47,15 @@ public class VehicleController {
         try {
             DocumentResponse response = vehicleService.uploadDocument(id, file);
             return ResponseEntity.ok(response);
+        } catch (SecurityException e) {
+            return ResponseEntity.status(403)
+                    .body(Map.of("message", e.getMessage()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
                     .body(Map.of("message", e.getMessage()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(500)
+                    .body(Map.of("message", "Upload failed: " + e.getMessage()));
         }
     }
 

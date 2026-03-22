@@ -15,6 +15,7 @@ public class DocumentResponse {
 
     private Long id;
     private String fileName;
-    private String filePath;
+    private String s3Url;
+    private String rawOcrText;
     private LocalDateTime uploadDate;
 }
