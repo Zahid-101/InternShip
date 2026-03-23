@@ -36,3 +36,8 @@ EXPOSE 8080
 
 # Run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
+
+
+aws ecr create-repository \
+    --repository-name driveease-app \
+    --region ap-southeast-1
