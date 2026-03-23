@@ -5,18 +5,22 @@ import com.driveease.dto.VehicleRequest;
 import com.driveease.dto.VehicleResponse;
 import com.driveease.service.VehicleService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/vehicles")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAnyRole('ADMIN', 'SUPPORT')")
 public class VehicleController {
 
     private final VehicleService vehicleService;
@@ -34,6 +38,21 @@ public class VehicleController {
     @GetMapping
     public ResponseEntity<List<VehicleResponse>> getAllVehicles() {
         return ResponseEntity.ok(vehicleService.getAllVehicles());
+    }
+
+    @GetMapping("/search")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPPORT')")
+    public ResponseEntity<Page<VehicleResponse>> searchVehicles(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) Integer quantity,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate pickupDate,
+            @RequestParam(required = false) Integer rentalDays,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<VehicleResponse> results = vehicleService.searchVehicles(
+                name, type, quantity, pickupDate, rentalDays, PageRequest.of(page, size));
+        return ResponseEntity.ok(results);
     }
 
     @GetMapping("/{id}")

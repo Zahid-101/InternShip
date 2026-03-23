@@ -2,6 +2,7 @@ com\driveease\service\VehicleService.class
 com\driveease\security\AuthEntryPoint.class
 com\driveease\dto\DocumentResponse$DocumentResponseBuilder.class
 com\driveease\repository\VehicleRepository.class
+com\driveease\specification\VehicleSpecification.class
 com\driveease\service\S3Service.class
 com\driveease\dto\VehicleRequest.class
 com\driveease\dto\JwtResponse$JwtResponseBuilder.class

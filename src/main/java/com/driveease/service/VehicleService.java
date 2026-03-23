@@ -8,9 +8,14 @@ import com.driveease.model.Vehicle;
 import com.driveease.model.VehicleType;
 import com.driveease.repository.DocumentRepository;
 import com.driveease.repository.VehicleRepository;
+import com.driveease.specification.VehicleSpecification;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -64,6 +69,14 @@ public class VehicleService {
         return vehicleRepository.findAll().stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    public Page<VehicleResponse> searchVehicles(String name, String type, Integer quantity,
+                                                 LocalDate pickupDate, Integer rentalDays,
+                                                 Pageable pageable) {
+        Specification<Vehicle> spec = VehicleSpecification.buildSearch(
+                name, type, quantity, pickupDate, rentalDays);
+        return vehicleRepository.findAll(spec, pageable).map(this::toResponse);
     }
 
     public VehicleResponse getVehicleById(Long id) {
