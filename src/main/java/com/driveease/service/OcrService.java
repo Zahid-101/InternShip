@@ -10,18 +10,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.List;
 
 /**
- * Performs OCR (TEXT_DETECTION) on uploaded documents using Google Cloud Vision API.
+ * Performs OCR on uploaded documents using Google Cloud Vision API.
  *
- * <p>Explicitly loads credentials from the path specified in
- * {@code GOOGLE_APPLICATION_CREDENTIALS} (read via spring-dotenv),
- * since the .env file is not visible to Google's default credential chain.</p>
- *
- * <p>If credentials are not configured or the API call fails, this service
- * gracefully returns an empty string instead of blocking the upload.</p>
+ * <p>Handles both <b>images</b> (JPG, PNG) via {@code batchAnnotateImages}
+ * and <b>PDFs</b> via {@code batchAnnotateFiles} with explicit MIME type.
+ * The Vision API rejects raw PDF bytes sent through the image endpoint
+ * with "Bad image data", so PDFs must use a separate code path.</p>
  */
 @Service
 public class OcrService {
@@ -32,7 +29,8 @@ public class OcrService {
     private String credentialsPath;
 
     /**
-     * Extracts text from the given file using Google Cloud Vision TEXT_DETECTION.
+     * Extracts text from the given file using Google Cloud Vision.
+     * Automatically detects PDF vs image and uses the appropriate API.
      *
      * @param file the uploaded multipart file (PDF, JPG, or PNG)
      * @return the extracted text, or empty string if OCR fails or is unavailable
@@ -45,47 +43,35 @@ public class OcrService {
         }
 
         try {
-            // Explicitly load credentials from the file path in .env and set the required OAuth scope
             GoogleCredentials credentials = GoogleCredentials.fromStream(
                     new FileInputStream(credentialsPath))
                     .createScoped(List.of("https://www.googleapis.com/auth/cloud-platform"));
+
+            // Force token refresh to surface clock-sync / proxy errors cleanly
+            credentials.refreshIfExpired();
 
             ImageAnnotatorSettings settings = ImageAnnotatorSettings.newBuilder()
                     .setCredentialsProvider(() -> credentials)
                     .build();
 
             try (ImageAnnotatorClient vision = ImageAnnotatorClient.create(settings)) {
+                ByteString fileBytes = ByteString.readFrom(file.getInputStream());
+                String contentType = file.getContentType();
 
-                ByteString imgBytes = ByteString.readFrom(file.getInputStream());
-
-                Image image = Image.newBuilder()
-                        .setContent(imgBytes)
-                        .build();
-
-                Feature feature = Feature.newBuilder()
-                        .setType(Feature.Type.TEXT_DETECTION)
-                        .build();
-
-                AnnotateImageRequest request = AnnotateImageRequest.newBuilder()
-                        .addFeatures(feature)
-                        .setImage(image)
-                        .build();
-
-                BatchAnnotateImagesResponse response = vision.batchAnnotateImages(
-                        List.of(request));
-
-                AnnotateImageResponse imageResponse = response.getResponses(0);
-
-                if (imageResponse.hasError()) {
-                    logger.warn("Vision API error for '{}': {}",
-                            file.getOriginalFilename(),
-                            imageResponse.getError().getMessage());
-                    return "";
+                String fullText;
+                if (contentType != null && contentType.equalsIgnoreCase("application/pdf")) {
+                    fullText = extractFromPdf(vision, fileBytes, file.getOriginalFilename());
+                } else {
+                    fullText = extractFromImage(vision, fileBytes, file.getOriginalFilename());
                 }
 
-                String fullText = imageResponse.getFullTextAnnotation().getText();
-                logger.info("OCR extracted {} characters from '{}'",
-                        fullText.length(), file.getOriginalFilename());
+                if (fullText.isEmpty()) {
+                    logger.info("No text found in '{}'.", file.getOriginalFilename());
+                } else {
+                    logger.info("OCR extracted {} characters from '{}'",
+                            fullText.length(), file.getOriginalFilename());
+                }
+
                 return fullText;
             }
 
@@ -94,5 +80,81 @@ public class OcrService {
                     file.getOriginalFilename(), e.getMessage());
             return "";
         }
+    }
+
+    /**
+     * Handles image files (JPG, PNG) via batchAnnotateImages.
+     */
+    private String extractFromImage(ImageAnnotatorClient vision, ByteString imgBytes, String filename) {
+        Image image = Image.newBuilder()
+                .setContent(imgBytes)
+                .build();
+
+        Feature feature = Feature.newBuilder()
+                .setType(Feature.Type.DOCUMENT_TEXT_DETECTION)
+                .build();
+
+        AnnotateImageRequest request = AnnotateImageRequest.newBuilder()
+                .addFeatures(feature)
+                .setImage(image)
+                .build();
+
+        BatchAnnotateImagesResponse response = vision.batchAnnotateImages(List.of(request));
+        AnnotateImageResponse imageResponse = response.getResponses(0);
+
+        if (imageResponse.hasError()) {
+            logger.warn("Vision API error for '{}': {}", filename,
+                    imageResponse.getError().getMessage());
+            return "";
+        }
+
+        // Check fullTextAnnotation first, then fall back to textAnnotations
+        if (imageResponse.hasFullTextAnnotation()) {
+            return imageResponse.getFullTextAnnotation().getText();
+        } else if (!imageResponse.getTextAnnotationsList().isEmpty()) {
+            return imageResponse.getTextAnnotations(0).getDescription();
+        }
+        return "";
+    }
+
+    /**
+     * Handles PDF files via batchAnnotateFiles with explicit MIME type.
+     * Supports up to 5 pages per request (Vision API limit for synchronous calls).
+     */
+    private String extractFromPdf(ImageAnnotatorClient vision, ByteString pdfBytes, String filename) {
+        InputConfig inputConfig = InputConfig.newBuilder()
+                .setMimeType("application/pdf")
+                .setContent(pdfBytes)
+                .build();
+
+        Feature feature = Feature.newBuilder()
+                .setType(Feature.Type.DOCUMENT_TEXT_DETECTION)
+                .build();
+
+        AnnotateFileRequest fileRequest = AnnotateFileRequest.newBuilder()
+                .setInputConfig(inputConfig)
+                .addFeatures(feature)
+                .build();
+
+        BatchAnnotateFilesResponse response = vision.batchAnnotateFiles(List.of(fileRequest));
+        AnnotateFileResponse fileResponse = response.getResponses(0);
+
+        if (fileResponse.hasError()) {
+            logger.warn("Vision API error for '{}': {}", filename,
+                    fileResponse.getError().getMessage());
+            return "";
+        }
+
+        // Concatenate text from all pages
+        StringBuilder allText = new StringBuilder();
+        for (AnnotateImageResponse pageResponse : fileResponse.getResponsesList()) {
+            if (pageResponse.hasFullTextAnnotation()) {
+                allText.append(pageResponse.getFullTextAnnotation().getText());
+            } else if (!pageResponse.getTextAnnotationsList().isEmpty()) {
+                allText.append(pageResponse.getTextAnnotations(0).getDescription());
+            }
+        }
+
+        return allText.toString();
     }
 }
