@@ -1,8 +1,11 @@
 package com.driveease.service;
 
 import com.driveease.dto.DocumentResponse;
+import com.driveease.dto.PriceRequest;
+import com.driveease.dto.PriceResponse;
 import com.driveease.dto.VehicleRequest;
 import com.driveease.dto.VehicleResponse;
+import com.driveease.exception.InsufficientStockException;
 import com.driveease.model.Document;
 import com.driveease.model.Vehicle;
 import com.driveease.model.VehicleType;
@@ -15,6 +18,8 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,6 +27,9 @@ import java.util.stream.Collectors;
 
 @Service
 public class VehicleService {
+
+    /** 10% markup on the base daily rate */
+    private static final BigDecimal RENTAL_MARKUP_RATE = new BigDecimal("1.10");
 
     private final VehicleRepository vehicleRepository;
     private final DocumentRepository documentRepository;
@@ -39,6 +47,52 @@ public class VehicleService {
         this.s3Service = s3Service;
         this.fileValidatorService = fileValidatorService;
         this.ocrService = ocrService;
+    }
+
+    /**
+     * Calculates the rental price for a vehicle.
+     * Formula: Total = (baseDailyRate × 1.10) × rentalDays × quantityRequested
+     */
+    public PriceResponse calculatePrice(PriceRequest request) {
+        Vehicle vehicle = vehicleRepository.findById(request.getVehicleId())
+                .orElseThrow(() -> new RuntimeException(
+                        "Vehicle not found with id: " + request.getVehicleId()));
+
+        // Stock check
+        if (request.getQuantityRequested() > vehicle.getQuantityAvailable()) {
+            throw new InsufficientStockException(
+                    "Insufficient stock. Requested: " + request.getQuantityRequested()
+                    + ", Available: " + vehicle.getQuantityAvailable());
+        }
+
+        BigDecimal baseDailyRate = vehicle.getBaseDailyRate();
+        BigDecimal rentalDays = BigDecimal.valueOf(request.getRentalDays());
+        BigDecimal quantity = BigDecimal.valueOf(request.getQuantityRequested());
+
+        // markupAmount = baseDailyRate × 0.10
+        BigDecimal markupAmount = baseDailyRate
+                .multiply(RENTAL_MARKUP_RATE.subtract(BigDecimal.ONE))
+                .setScale(2, RoundingMode.HALF_UP);
+
+        // subtotal = baseDailyRate × rentalDays × quantity (before markup)
+        BigDecimal subtotal = baseDailyRate
+                .multiply(rentalDays)
+                .multiply(quantity)
+                .setScale(2, RoundingMode.HALF_UP);
+
+        // grandTotal = (baseDailyRate × MARKUP) × rentalDays × quantity
+        BigDecimal grandTotal = baseDailyRate
+                .multiply(RENTAL_MARKUP_RATE)
+                .multiply(rentalDays)
+                .multiply(quantity)
+                .setScale(2, RoundingMode.HALF_UP);
+
+        return PriceResponse.builder()
+                .baseDailyRate(baseDailyRate)
+                .markupAmount(markupAmount)
+                .subtotal(subtotal)
+                .grandTotal(grandTotal)
+                .build();
     }
 
     public VehicleResponse addVehicle(VehicleRequest request) {

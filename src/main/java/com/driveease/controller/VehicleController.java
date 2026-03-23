@@ -1,8 +1,11 @@
 package com.driveease.controller;
 
 import com.driveease.dto.DocumentResponse;
+import com.driveease.dto.PriceRequest;
+import com.driveease.dto.PriceResponse;
 import com.driveease.dto.VehicleRequest;
 import com.driveease.dto.VehicleResponse;
+import com.driveease.exception.InsufficientStockException;
 import com.driveease.service.VehicleService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -38,6 +41,17 @@ public class VehicleController {
     @GetMapping
     public ResponseEntity<List<VehicleResponse>> getAllVehicles() {
         return ResponseEntity.ok(vehicleService.getAllVehicles());
+    }
+
+    @PostMapping("/calculate-price")
+    public ResponseEntity<?> calculatePrice(@Valid @RequestBody PriceRequest request) {
+        try {
+            PriceResponse response = vehicleService.calculatePrice(request);
+            return ResponseEntity.ok(response);
+        } catch (InsufficientStockException e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", e.getMessage()));
+        }
     }
 
     @GetMapping("/search")

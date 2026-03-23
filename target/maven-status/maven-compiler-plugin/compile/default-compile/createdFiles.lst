@@ -6,7 +6,9 @@ com\driveease\specification\VehicleSpecification.class
 com\driveease\service\S3Service.class
 com\driveease\dto\VehicleRequest.class
 com\driveease\dto\JwtResponse$JwtResponseBuilder.class
+com\driveease\dto\PriceResponse.class
 com\driveease\repository\DocumentRepository.class
+com\driveease\dto\PriceRequest.class
 com\driveease\security\JwtAuthenticationFilter.class
 com\driveease\dto\JwtResponse.class
 com\driveease\controller\AuthController.class
@@ -15,6 +17,7 @@ com\driveease\dto\DocumentResponse.class
 com\driveease\model\Document.class
 com\driveease\repository\UserRepository.class
 com\driveease\security\SecurityConfig.class
+com\driveease\exception\InsufficientStockException.class
 com\driveease\dto\UserResponse$UserResponseBuilder.class
 com\driveease\dto\VehicleResponse$VehicleResponseBuilder.class
 com\driveease\controller\VehicleController.class
@@ -28,6 +31,7 @@ com\driveease\dto\UserResponse.class
 com\driveease\service\OcrService.class
 com\driveease\controller\UserController.class
 com\driveease\dto\RegisterRequest.class
+com\driveease\dto\PriceResponse$PriceResponseBuilder.class
 com\driveease\model\PasswordResetToken$PasswordResetTokenBuilder.class
 com\driveease\security\CustomUserDetailsService.class
 com\driveease\model\VehicleType.class
