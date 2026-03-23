@@ -10,6 +10,7 @@ import com.driveease.security.JwtUtils;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -40,29 +41,35 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        loginRequest.getUsername(),
-                        loginRequest.getPassword()
-                )
-        );
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            loginRequest.getUsername(),
+                            loginRequest.getPassword()
+                    )
+            );
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String jwt = jwtUtils.generateToken(authentication);
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            String jwt = jwtUtils.generateToken(authentication);
 
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        String role = userDetails.getAuthorities().stream()
-                .findFirst()
-                .map(a -> a.getAuthority().replace("ROLE_", ""))
-                .orElse("");
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            String role = userDetails.getAuthorities().stream()
+                    .findFirst()
+                    .map(a -> a.getAuthority().replace("ROLE_", ""))
+                    .orElse("");
 
-        JwtResponse response = JwtResponse.builder()
-                .token(jwt)
-                .username(userDetails.getUsername())
-                .role(role)
-                .build();
+            JwtResponse response = JwtResponse.builder()
+                    .token(jwt)
+                    .username(userDetails.getUsername())
+                    .role(role)
+                    .build();
 
-        return ResponseEntity.ok(response);
+            return ResponseEntity.ok(response);
+        } catch (DisabledException e) {
+            return ResponseEntity.status(403)
+                    .body(Map.of("message",
+                            "Your account has been deactivated. Please contact the administrator."));
+        }
     }
 
     @PostMapping("/register")

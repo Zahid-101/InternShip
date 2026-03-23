@@ -30,4 +30,11 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
+
+    @Column(name = "contact_number")
+    private String contactNumber;
+
+    @Column(name = "is_active", nullable = false)
+    @Builder.Default
+    private boolean isActive = true;
 }

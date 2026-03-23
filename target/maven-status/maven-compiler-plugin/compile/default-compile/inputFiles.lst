@@ -1,11 +1,13 @@
 C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\config\S3Config.java
 C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\controller\AuthController.java
+C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\controller\UserController.java
 C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\controller\VehicleController.java
 C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\DriveEaseApplication.java
 C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\dto\DocumentResponse.java
 C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\dto\JwtResponse.java
 C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\dto\LoginRequest.java
 C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\dto\RegisterRequest.java
+C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\dto\UserResponse.java
 C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\dto\VehicleRequest.java
 C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\dto\VehicleResponse.java
 C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\model\Document.java
@@ -26,5 +28,6 @@ C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\security\Securit
 C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\service\FileValidatorService.java
 C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\service\OcrService.java
 C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\service\S3Service.java
+C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\service\UserService.java
 C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\service\VehicleService.java
 C:\Users\Zahid\Documents\InternShip\src\main\java\com\driveease\specification\VehicleSpecification.java
