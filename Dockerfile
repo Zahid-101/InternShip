@@ -12,6 +12,8 @@ RUN mvn dependency:go-offline -B
 COPY src ./src
 # Using wildcard to copy .env if it exists, as spring-dotenv is used
 COPY .env* ./
+# Include the Google Cloud Vision credentials file
+COPY vision-key.json ./
 
 # Build the application, skipping tests to speed up the build
 RUN mvn clean package -DskipTests
@@ -28,8 +30,9 @@ WORKDIR /app
 
 # Copy the built JAR file from the builder stage
 COPY --from=builder /app/target/*.jar app.jar
-# Copy the .env file to the runtime stage if it exists
+# Copy the .env file and Google credentials to the runtime stage
 COPY --from=builder /app/.env* ./
+COPY --from=builder /app/vision-key.json ./
 
 # Expose the port the app runs on (App Runner defaults to 8080)
 EXPOSE 8080
@@ -37,7 +40,3 @@ EXPOSE 8080
 # Run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
 
-
-aws ecr create-repository \
-    --repository-name driveease-app \
-    --region ap-southeast-1

@@ -12,6 +12,9 @@ target/
 .settings/
 .project
 .classpath
+apprunner.json
+deploy_aws.ps1
+trust-policy.json
 
 # OS
 .DS_Store
