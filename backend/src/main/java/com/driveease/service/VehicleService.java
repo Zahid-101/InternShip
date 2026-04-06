@@ -196,6 +196,36 @@ public class VehicleService {
         return toResponse(saved);
     }
 
+    public VehicleResponse updateVehicle(Long id, VehicleRequest request) {
+        Vehicle vehicle = vehicleRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Vehicle not found with id: " + id));
+
+        VehicleType type;
+        try {
+            type = VehicleType.valueOf(request.getType().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid vehicle type");
+        }
+
+        vehicle.setMake(request.getMake());
+        vehicle.setModel(request.getModel());
+        vehicle.setYear(request.getYear());
+        vehicle.setType(type);
+        vehicle.setBaseDailyRate(request.getBaseDailyRate());
+        vehicle.setQuantityAvailable(request.getQuantityAvailable());
+        vehicle.setImageUrl(request.getImageUrl());
+        vehicle.setContractExpiryDate(request.getContractExpiryDate());
+
+        Vehicle saved = vehicleRepository.save(vehicle);
+        return toResponse(saved);
+    }
+
+    public void deleteVehicle(Long id) {
+        Vehicle vehicle = vehicleRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Vehicle not found with id: " + id));
+        vehicleRepository.delete(vehicle);
+    }
+
     // ---- Mapping helpers ----
 
     private VehicleResponse toResponse(Vehicle vehicle) {
