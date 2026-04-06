@@ -92,6 +92,19 @@ public class VehicleController {
         }
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<VehicleResponse> updateVehicle(@PathVariable Long id,
+                                                          @Valid @RequestBody VehicleRequest request) {
+        VehicleResponse response = vehicleService.updateVehicle(id, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteVehicle(@PathVariable Long id) {
+        vehicleService.deleteVehicle(id);
+        return ResponseEntity.ok(Map.of("message", "Vehicle deleted successfully"));
+    }
+
     @GetMapping("/{id}/documents")
     public ResponseEntity<List<DocumentResponse>> getDocuments(@PathVariable Long id) {
         return ResponseEntity.ok(vehicleService.getDocumentsByVehicleId(id));
