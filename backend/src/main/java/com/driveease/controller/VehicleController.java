@@ -39,6 +39,11 @@ public class VehicleController {
     }
 
     @GetMapping
+    @io.swagger.v3.oas.annotations.Operation(
+            summary = "Get all vehicles",
+            description = "Retrieves a list of all vehicles available in the system."
+    )
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Successfully retrieved list of vehicles")
     public ResponseEntity<List<VehicleResponse>> getAllVehicles() {
         return ResponseEntity.ok(vehicleService.getAllVehicles());
     }
@@ -89,6 +94,24 @@ public class VehicleController {
         } catch (RuntimeException e) {
             return ResponseEntity.status(500)
                     .body(Map.of("message", "Upload failed: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping(value = "/{id}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> uploadVehicleImage(@PathVariable Long id,
+                                                 @RequestParam("file") MultipartFile file) {
+        try {
+            VehicleResponse response = vehicleService.uploadVehicleImage(id, file);
+            return ResponseEntity.ok(response);
+        } catch (SecurityException e) {
+            return ResponseEntity.status(403)
+                    .body(Map.of("message", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", e.getMessage()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(500)
+                    .body(Map.of("message", "Image upload failed: " + e.getMessage()));
         }
     }
 

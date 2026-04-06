@@ -175,6 +175,27 @@ public class VehicleService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Uploads a vehicle profile image to S3 and updates the vehicle's imageUrl.
+     * Only JPEG and PNG files are accepted.
+     */
+    public VehicleResponse uploadVehicleImage(Long vehicleId, MultipartFile file) {
+        Vehicle vehicle = vehicleRepository.findById(vehicleId)
+                .orElseThrow(() -> new RuntimeException("Vehicle not found with id: " + vehicleId));
+
+        // Validate that the file is an image (JPEG/PNG only)
+        fileValidatorService.validateImage(file);
+
+        // Upload to S3 under the "images/" prefix
+        String imageUrl = s3Service.uploadImage(file);
+
+        // Update the vehicle's image URL
+        vehicle.setImageUrl(imageUrl);
+        Vehicle saved = vehicleRepository.save(vehicle);
+
+        return toResponse(saved);
+    }
+
     // ---- Mapping helpers ----
 
     private VehicleResponse toResponse(Vehicle vehicle) {
