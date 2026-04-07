@@ -100,52 +100,6 @@ public class FileValidatorService {
         logger.debug("File '{}' passed validation ({})", originalFilename, detectedMime);
     }
 
-    /**
-     * Validates that the file is specifically an image (JPEG or PNG only).
-     * PDFs are not allowed for image uploads.
-     */
-    public void validateImage(MultipartFile file) {
-        String originalFilename = file.getOriginalFilename();
-
-        if (originalFilename == null || originalFilename.isBlank()) {
-            throw new SecurityException("File name is missing");
-        }
-
-        String extension = getFileExtension(originalFilename).toLowerCase();
-        String expectedMime = EXTENSION_TO_MIME.get(extension);
-
-        if (expectedMime == null || !expectedMime.startsWith("image/")) {
-            throw new SecurityException(
-                    "Invalid file extension '." + extension + "'. "
-                    + "Only .jpg, .jpeg, and .png are allowed for images");
-        }
-
-        String detectedMime;
-        try (InputStream is = new BufferedInputStream(file.getInputStream())) {
-            detectedMime = tika.detect(is);
-        } catch (IOException e) {
-            throw new SecurityException(
-                    "Failed to read file for validation: " + e.getMessage());
-        }
-
-        if (!detectedMime.startsWith("image/") || !ALLOWED_MIME_TYPES.contains(detectedMime)) {
-            logger.warn("Rejected image '{}': detected MIME '{}' is not an allowed image type",
-                    originalFilename, detectedMime);
-            throw new SecurityException(
-                    "File is not a valid image. Detected: " + detectedMime);
-        }
-
-        if (!expectedMime.equals(detectedMime)) {
-            logger.warn("Rejected image '{}': extension implies '{}' but content is '{}'",
-                    originalFilename, expectedMime, detectedMime);
-            throw new SecurityException(
-                    "File extension '." + extension + "' does not match the actual content type '"
-                    + detectedMime + "'");
-        }
-
-        logger.debug("Image '{}' passed validation ({})", originalFilename, detectedMime);
-    }
-
     private String getFileExtension(String filename) {
         int lastDot = filename.lastIndexOf('.');
         return lastDot == -1 ? "" : filename.substring(lastDot + 1);

@@ -225,7 +225,6 @@ public class VehicleService {
                 .orElseThrow(() -> new RuntimeException("Vehicle not found with id: " + id));
         vehicleRepository.delete(vehicle);
     }
-
     // ---- Mapping helpers ----
 
     private VehicleResponse toResponse(Vehicle vehicle) {

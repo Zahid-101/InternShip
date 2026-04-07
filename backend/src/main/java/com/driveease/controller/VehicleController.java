@@ -39,11 +39,6 @@ public class VehicleController {
     }
 
     @GetMapping
-    @io.swagger.v3.oas.annotations.Operation(
-            summary = "Get all vehicles",
-            description = "Retrieves a list of all vehicles available in the system."
-    )
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Successfully retrieved list of vehicles")
     public ResponseEntity<List<VehicleResponse>> getAllVehicles() {
         return ResponseEntity.ok(vehicleService.getAllVehicles());
     }
@@ -127,8 +122,6 @@ public class VehicleController {
         vehicleService.deleteVehicle(id);
         return ResponseEntity.ok(Map.of("message", "Vehicle deleted successfully"));
     }
-
-
     @GetMapping("/{id}/documents")
     public ResponseEntity<List<DocumentResponse>> getDocuments(@PathVariable Long id) {
         return ResponseEntity.ok(vehicleService.getDocumentsByVehicleId(id));
